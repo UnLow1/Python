@@ -1,2 +1,3 @@
-# Python1
-Projects in python
+# Python
+
+Here are few projects in Python for studies.
