@@ -1,73 +1,51 @@
 import os
+import argparse
+import random
 
 from miditime.miditime import MIDITime
 from random import randint
 
 
-def isItNarcotic():
-    global type
-    type = input("If this music is enough narcotic - type 'Y'\n"
-                 "If you want rand SIMILAR music - type 'Sim'\n"
-                 "If you want rand FASTER music - type 'F'\n"
-                 "If you want rand SLOWER music - type 'S'\n"
-                 "If you want rand LONGER music - type 'L'\n")
+class Music:
+    def parser(self, args):
+        self.filename = args.filename + '.mid'
+        self.repeats = args.repeats
+        self.long = 10 + args.long * 10
+        self.tempo = 72 + args.speed * 12
+        self.pitch_max = 68 + args.speed * 4
+        self.pitch_min = 33 + args.speed * 4
+        self.duration_max = 2.7 - args.speed * 0.3
+        self.duration_min = 1.8 - args.speed * 0.2
+        self.mymidi = MIDITime(self.tempo, self.filename)
+        self.midinotes = []
+
+    def rand(self):
+        for i in range(0, self.long):
+            self.midinotes.append([i * 0.53, randint(self.pitch_min, self.pitch_max), randint(70, 130),
+                                   random.uniform(self.duration_min, self.duration_max)])
+        j = 0
+        for j in range(1, self.repeats):
+            for i in range(0, self.long):
+                self.midinotes.append([j * self.long * 0.53 + i * 0.53, self.midinotes[i][1], self.midinotes[i][2],
+                                       self.midinotes[i][3]])
+        self.mymidi.add_track(self.midinotes)
+
+    def saveAndLaunch(self):
+        self.mymidi.save_midi()
+        os.startfile(self.filename)
 
 
-def playMusic(long, tempo, pitch, velocity, duration):
-    global mymidi, midinotes, i
-    mymidi = MIDITime(tempo, filename)
-    midinotes = []
-    for i in range(0, long):
-        midinotes.append([i * 0.5, randint(48, pitch), randint(70, velocity), randint(1, duration)])
-    mymidi.add_track(midinotes)
-    mymidi.save_midi()
-    os.startfile(filename)
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", help="Filename of the midifile (.mid not required)", type=str)
+parser.add_argument("location", help="Location of the midifile", type=str)
+parser.add_argument("long", help="Long of the one part (from 0 to 4)", type=int)
+parser.add_argument("speed", help="Speed of the music (from 0 to 4)", type=int)
+parser.add_argument("repeats", help="Quantity of the parts", type=int)
+args = parser.parse_args()
 
-index = 0
-long = 30
-tempo = 120
-pitch = 100  # it's a max pitch
-velocity = 140  # it's a max velocity
-duration = 1
+os.chdir(args.location)
 
-filename = 'myfile' + str(index) + '.mid'
-playMusic(long, tempo, pitch, velocity, duration)
-
-isItNarcotic()
-
-while (type != 'Y' and type != 'y'):
-    index += 1
-    filename = 'myfile' + str(index) + '.mid'
-    if (type == 'F' or type == 'f'):
-        tempo += 15
-        pitch += 6
-        velocity += 10
-        playMusic(long, tempo, pitch, velocity, duration)
-    elif (type == 'S' or type == 's'):
-        tempo -= 15
-        pitch -= 6
-        velocity -= 10
-        duration += 3
-        playMusic(long, tempo, pitch, velocity, duration)
-    elif (type == 'Sim' or type == 'sim'):
-        playMusic(long, tempo, pitch, velocity, duration)
-    elif (type == 'L' or type == 'l'):
-        long += 10
-        playMusic(long, tempo, pitch, velocity, duration)
-    isItNarcotic()
-
-filename = input("Write filename\n")
-location = input("Write location where file should be written\n")
-os.chdir(location)
-repeat = int(input("How many times it should be repeated?\n"))
-
-for i in range(1,repeat):
-    for j in range(long):
-        tmp = list(midinotes[j])
-        tmp[0] += i * long / 2
-        midinotes.append(tmp)
-
-mymidi = MIDITime(tempo, filename)
-mymidi.add_track(midinotes)
-mymidi.save_midi()
-os.startfile(filename)
+music = Music()
+music.parser(args)
+music.rand()
+music.saveAndLaunch()
