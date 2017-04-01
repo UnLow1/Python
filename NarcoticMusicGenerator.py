@@ -26,8 +26,8 @@ class Music:
         j = 0
         for j in range(1, self.repeats):
             for i in range(0, self.long):
-                self.midinotes.append([j * self.long * 0.53 + i * 0.53, self.midinotes[i][1], self.midinotes[i][2],
-                                       self.midinotes[i][3]])
+                self.midinotes.append(
+                    [j * self.long * 0.53 + i * 0.53, self.midinotes[i][1], self.midinotes[i][2], self.midinotes[i][3]])
         self.mymidi.add_track(self.midinotes)
 
     def saveAndLaunch(self):
@@ -38,9 +38,9 @@ class Music:
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Filename of the midifile (.mid not required)", type=str)
 parser.add_argument("location", help="Location of the midifile", type=str)
-parser.add_argument("long", help="Long of the one part (from 0 to 4)", type=int)
-parser.add_argument("speed", help="Speed of the music (from 0 to 4)", type=int)
-parser.add_argument("repeats", help="Quantity of the parts", type=int)
+parser.add_argument("-long", help="Long of the one part", type=int, default=2, choices=range(0, 5))
+parser.add_argument("speed", help="Speed of the music", type=int, choices=range(0, 5))
+parser.add_argument("-repeats", help="Quantity of the parts", type=int, default=2)
 args = parser.parse_args()
 
 os.chdir(args.location)
