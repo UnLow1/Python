@@ -1,3 +1,5 @@
+import random
+import argparse
 import time
 from functools import wraps
 
@@ -37,21 +39,21 @@ def clear_prof_data():
     PROF_DATA = {}
 
 
+def rand(size, do):  # zwraca tablicę o podanym rozmiarze
+    tab = []  # z wylosowanymi wartościami
+    while size > 0:  # dopóki jakieś musi dodać
+        tmp = random.randint(0, do)
+        tab.append(tmp)
+        size -= 1  # zmniejsza ilość pozostałych komórek do wylosowania
+    return tab
+
+
 @profile
 def algorithm(size):
     # copy here your algorithm
-    import random
 
-    def losuj(size, do):  # zwraca tablicę o podanym rozmiarze
-        tab = []  # z wylosowanymi wartościami
-        while size > 0:  # dopóki jakieś musi dodać
-            tmp = random.randint(0, do)
-            tab.append(tmp)
-            size -= 1  # zmniejsza ilość pozostałych komórek do wylosowania
-        return tab
-
-    # BUBBLESORT
-    def sort(tab):  # zwraca posortowaną tablicę
+    # BUBBLESORT O(n^2)
+    def bubblesort(tab):  # zwraca posortowaną tablicę
         for i in range(len(tab)):
             j = len(tab) - 1  # od ostatniej komórki
             while j > i:  # do aktualnie szukanej jako najmniejsza
@@ -62,7 +64,7 @@ def algorithm(size):
                 j -= 1
         return tab
 
-    # QUICKSORT
+    # QUICKSORT O(n^1)     should be O(nlog(n))
     def quicksort(myList, start, end):
         if start < end:
             # partition the list
@@ -103,53 +105,155 @@ def algorithm(size):
                 for k in range(0, size):
                     a += 1
 
-    tab = losuj(size, 100000)
-    tab = quicksort(tab, 0, len(tab) - 1)
-    # tab = sort(tab)
-    # algorithm_n_to_3()
+    # BINARY SEARCH O(log(n))
+    def binary_search(value, data):
+        left = 0
+        right = len(data) - 1
+        # szukaj dopoki granica lewa jest mniejsza od prawej
+        while left < right:
+            middle = (left + right) // 2  # wybor elementu srodkowego
+            if data[middle] < value:  # jezeli element srodkowy jest mniejszy od szukanego
+                left = middle + 1  # to odrzuc lewa polowke (przesun lewa granice)
+            else:  # w przeciwnym razie
+                right = middle  # odrzuc prawa polowke (przesun prawa granice)
+        # sprawdz czy znaleziono szukany element
+        if data[right] == value:
+            return right
+        else:
+            return None
 
+    # HANOI TOWERS O(2^n)
+    def hanoi(n, A, B, C):
+        if n == 1:
+            C.append(A.pop())
+        else:
+            hanoi(n - 1, A, C, B)  # hanoi automatycznie ukazuje
+            C.append(A.pop())
+            hanoi(n - 1, B, A, C)
 
-def check_exp_to_r(points, middle_point, step, r):
-    c = (points[middle_point][1] ** (1 / r)) / points[middle_point][0]
+    # quicksort(tab, 0, len(tab) - 1)
+    # bubblesort(tab)
+    algorithm_n_to_3()
+    # binary_search(tab[random.randint(0,len(tab))],tab)
+    # hanoi(size, a, [], [])
+
+def check_2_to_n():
+    local_counter = 0
+    max_ratio = 0
+    last_point = (size_max - size_min) // step
+    c = points[last_point][1] * (2 ** (-points[last_point][0]))
     print("c = " + str(c))
     for i in range(0, (size_max - size_min) // step):
+        if points[i][1] > 0:
+            local_counter += 1
+            ratio = (c * (2 ** points[i][0])) / points[i][1]
+            if ratio > max_ratio:
+                max_ratio = ratio
+            if abs(ratio - 1) > 1:
+                print("It's faster than O(2^n)")
+                print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
+                return False
+    if local_counter > 5:
+        print("It's a O(2^n) with c = " + str(c))
+        print("max_ratio = " + str(max_ratio))
+        return True
+    else:
+        print("It's faster than O(2^n)")
+        return False
+
+def check_exp_to_r():
+    c = (points[middle_point][1] ** (1 / r)) / points[middle_point][0]
+    global max_ratio
+    max_ratio = 0
+    print("c = " + str(c))
+    for i in range(0, (size_max - size_min) // step):
+        if points[i][1] == 0:
+            points[i][1] = 0.01
         ratio = ((c * points[i][0]) ** r) / points[i][1]
-        if (abs(ratio - 1) > 0.15):
-            print("Too high difference r = " + str(r))
+        if ratio > max_ratio:
+            max_ratio = ratio
+        if abs(ratio - 1) > 0.31:
+            print("It's faster than O(n^" + str(r) + ")")
             print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
             return False
     print("It's a O(n^" + str(r) + ") with c = " + str(c))
+    print("max_ratio = " + str(max_ratio))
     return True
 
 
-def set_points(size_min, size_max, step):
+def set_points():
     height = (size_max - size_min) // step
     # points[][0] = size
-    # points[][1] = avg_time * 1000
+    # points[][1] = avg_time
     points = [[0 for x in range(2)] for y in range(height + 1)]  # matrix
     counter = 0
-    for size in range(size_min, size_max, step):
+    global tab
+    tab = []
+    for size in range(size_min, size_max + 1, step):
         # how many times algorithm should be run for one size
         # higher number = higher precision
-        precision = 1
         for i in range(0, precision + 1):
+            tab = rand(size, 100000)
+            global a
+            a = []
+            for i in range(0, size):
+                a.append(size - i)
             algorithm(size)
         print_prof_data()
         clear_prof_data()
-        print('%d, %.3f' % (size, avg_time * 1000))
+        print('%d, %.3f' % (size, avg_time))
         points[counter][0] = size
-        points[counter][1] = avg_time * 1000
+        points[counter][1] = avg_time
+        if avg_time > timeout:
+            exit()
         counter += 1
     return points
 
 
-size_max = 100000
-size_min = 10000
-r = 1
-step = (size_max - size_min) // 10  # 10 points
+# n in range (50 000 - 500 000) QUICKSORT O(n^1)     < 0.31         67 sec with 15 points     48 sec with 10 points
+# n in range (1 000 - 5 000) BUBBLESORT O(n^2)       < 0.1          50 sec with 15 points     34 sec with 10 points
+# n in range (100 - 500) ALGORITH_N_TO_3 O(n^3)      < 0.1          82 sec with 15 points     61 sec with 10 points
+# n in range (10 - 25) HANOI O(2^n)                  <              30 sec with 15 points
+# O(nlog(n)) is too fast, problem with memory for list
 
-points = set_points(size_min, size_max, step)
-middle_point = ((size_max - size_min) // step + 1) // 2
-print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1]) + ")")
-while (check_exp_to_r(points, middle_point, step, r) == False and r < 6):
-    r += 1
+parser = argparse.ArgumentParser()
+parser.add_argument("timeout", help="Max time for counting one point", type=int)
+parser.add_argument("-points_quantity", help="Quantity of points in graph", type=int, default=10)
+parser.add_argument("-precision", help="How many times algorithm should be run", type=int, default=1)
+args = parser.parse_args()
+
+timeout = args.timeout
+precision = args.precision
+points_quantity = args.points_quantity
+size_max = 25
+size_min = 10
+r = 3
+step = (size_max - size_min) // points_quantity
+
+points = set_points()
+
+max_ratio = 0
+
+# checking O(2^n)
+if check_2_to_n() is False:
+    size_max = 500
+    size_min = 100
+    step = (size_max - size_min) // points_quantity
+
+    points = set_points()
+    middle_point = ((size_max - size_min) // step + 1) // 2
+    print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1]) + ")")
+    # checking O(n^r)
+    while check_exp_to_r() is False and r > 1:
+        if r == 2:
+            size_min = 50000
+            size_max = 500000
+        else:
+            size_min *= 10
+            size_max *= 10
+        r -= 1
+        step = (size_max - size_min) // points_quantity
+        points = set_points()
+
+    if r == 1:
+        print("Can't find solution")
