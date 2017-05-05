@@ -1,9 +1,9 @@
 import random
+import math
 import argparse
 import time
 from functools import wraps
-
-PROF_DATA = {}
+import importlib
 
 
 def profile(fn):
@@ -22,30 +22,6 @@ def profile(fn):
         return ret
 
     return with_profiling
-
-
-def print_prof_data():
-    global avg_time
-    for fname, data in PROF_DATA.items():
-        max_time = max(data[1])
-        avg_time = sum(data[1]) / len(data[1])
-        # print("Function %s called %d times. " % (fname, data[0])),
-        # print('Execution time max: %.3f, average: %.3f' % (max_time, avg_time))
-        # print('time = %.3f' % (avg_time))
-
-
-def clear_prof_data():
-    global PROF_DATA
-    PROF_DATA = {}
-
-
-def rand(size, do):  # zwraca tablicę o podanym rozmiarze
-    tab = []  # z wylosowanymi wartościami
-    while size > 0:  # dopóki jakieś musi dodać
-        tmp = random.randint(0, do)
-        tab.append(tmp)
-        size -= 1  # zmniejsza ilość pozostałych komórek do wylosowania
-    return tab
 
 
 @profile
@@ -133,55 +109,86 @@ def algorithm(size):
 
     # quicksort(tab, 0, len(tab) - 1)
     # bubblesort(tab)
-    algorithm_n_to_3()
-    # binary_search(tab[random.randint(0,len(tab))],tab)
-    # hanoi(size, a, [], [])
+    # algorithm_n_to_3()
+    # binary_search(tab[random.randint(0, len(tab) - 1)], tab)
+    hanoi(size, a, [], [])
+
+
+PROF_DATA = {}
+
+
+def print_prof_data():
+    global avg_time
+    for fname, data in PROF_DATA.items():
+        max_time = max(data[1])
+        avg_time = sum(data[1]) / len(data[1])
+        # print("Function %s called %d times. " % (fname, data[0])),
+        # print('Execution time max: %.3f, average: %.3f' % (max_time, avg_time))
+        # print('time = %.3f' % (avg_time))
+
+
+def clear_prof_data():
+    global PROF_DATA
+    PROF_DATA = {}
+
+
+def rand(size, do):  # zwraca tablicę o podanym rozmiarze
+    tab = []  # z wylosowanymi wartościami
+    while size > 0:  # dopóki jakieś musi dodać
+        tmp = random.randint(0, do)
+        tab.append(tmp)
+        size -= 1  # zmniejsza ilość pozostałych komórek do wylosowania
+    return tab
+
 
 def check_2_to_n():
-    local_counter = 0
-    max_ratio = 0
-    last_point = (size_max - size_min) // step
+    # precision - how many points are out of line
+    precision = 0
+    last_point = ((size_max - size_min) // step) - 1
+    global c
     c = points[last_point][1] * (2 ** (-points[last_point][0]))
-    print("c = " + str(c))
     for i in range(0, (size_max - size_min) // step):
         if points[i][1] > 0:
-            local_counter += 1
             ratio = (c * (2 ** points[i][0])) / points[i][1]
-            if ratio > max_ratio:
-                max_ratio = ratio
             if abs(ratio - 1) > 1:
-                print("It's faster than O(2^n)")
-                print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
-                return False
-    if local_counter > 5:
-        print("It's a O(2^n) with c = " + str(c))
-        print("max_ratio = " + str(max_ratio))
-        return True
-    else:
+                precision += 1
+                # print("It's faster than O(2^n)")
+                # print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
+                # return False
+    precision /= points_quantity
+    if precision > 0.2 or points[i - 1][1] == 0:
         print("It's faster than O(2^n)")
+        print("precision = " + str(precision))
         return False
-
-def check_exp_to_r():
-    c = (points[middle_point][1] ** (1 / r)) / points[middle_point][0]
-    global max_ratio
-    max_ratio = 0
-    print("c = " + str(c))
-    for i in range(0, (size_max - size_min) // step):
-        if points[i][1] == 0:
-            points[i][1] = 0.01
-        ratio = ((c * points[i][0]) ** r) / points[i][1]
-        if ratio > max_ratio:
-            max_ratio = ratio
-        if abs(ratio - 1) > 0.31:
-            print("It's faster than O(n^" + str(r) + ")")
-            print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
-            return False
-    print("It's a O(n^" + str(r) + ") with c = " + str(c))
-    print("max_ratio = " + str(max_ratio))
+    print("It's O(2^n) with c = " + str(c))
+    print("precision = " + str(precision))
     return True
 
 
-def set_points():
+def check_exp_to_r(r):
+    precision = 0
+    global c
+    c = points[middle_point][1] / (points[middle_point][0] ** (r))
+    for i in range(0, (size_max - size_min) // step):
+        if points[i][1] == 0:
+            points[i][1] = 0.01
+        ratio = (c * (points[i][0]) ** r) / points[i][1]
+        if abs(ratio - 1) > 0.31:
+            precision += 1
+            # print("It's faster than O(n^" + str(r) + ")")
+            # print("ratio = " + str(ratio) + "    point = " + str(points[i][0]) + " " + str(points[i][1]))
+            # return False
+    precision /= points_quantity
+    if precision > 0.2 or points[i - 1][1] == 0:
+        print("It's faster than O(n^)" + str(r))
+        print("precision = " + str(precision))
+        return False
+    print("It's O(n^" + str(r) + ") with c = " + str(c))
+    print("precision = " + str(precision))
+    return True
+
+
+def set_points(total_time):
     height = (size_max - size_min) // step
     # points[][0] = size
     # points[][1] = avg_time
@@ -189,10 +196,11 @@ def set_points():
     counter = 0
     global tab
     tab = []
-    for size in range(size_min, size_max + 1, step):
+    licznik = 0
+    for size in range(size_min, size_max, step):
         # how many times algorithm should be run for one size
-        # higher number = higher precision
-        for i in range(0, precision + 1):
+        # higher number = higher point_precision
+        for i in range(0, point_precision + 1):
             tab = rand(size, 100000)
             global a
             a = []
@@ -202,15 +210,54 @@ def set_points():
         print_prof_data()
         clear_prof_data()
         print('%d, %.3f' % (size, avg_time))
+        licznik += 1
         points[counter][0] = size
         points[counter][1] = avg_time
-        if avg_time > timeout:
-            exit()
+        try:
+            total_time += avg_time
+            if total_time > timeout:
+               raise RuntimeError('Time limit reached.')
+        except RuntimeError:
+            print("Check last statement")
+            raise
+        # print("Time limit reached. Check last statement")
+        # exit()
         counter += 1
     return points
 
 
-# n in range (50 000 - 500 000) QUICKSORT O(n^1)     < 0.31         67 sec with 15 points     48 sec with 10 points
+#   complexity == 1  -  O(2^n)
+#   complexity == 2  -  O(n^3)
+#   complexity == 3  -  O(n^2)
+#   complexity == 4  -  O(n)
+
+def count_time(c, size):
+    result = 0
+    if complexity == 1:
+        result = c * (2 ** size)
+    elif complexity == 2:
+        result = c * (size ** 3)
+    elif complexity == 3:
+        result = c * (size ** 2)
+    elif complexity == 4:
+        result = c * size
+    return result
+
+
+def count_size(c, time, complexity):
+    result = 0
+    if complexity == 1:
+        result = math.log((time / c), 2)
+    elif complexity == 2:
+        result = (time / c) ** (1 / 3)
+    elif complexity == 3:
+        result = (time / c) ** (1 / 2)
+    elif complexity == 4:
+        result = time / c
+    return result
+
+
+# n in range (1 000 - 250 000) QUICKSORT O(n^1)     < 0.31         67 sec with 15 points     48 sec with 10 points
 # n in range (1 000 - 5 000) BUBBLESORT O(n^2)       < 0.1          50 sec with 15 points     34 sec with 10 points
 # n in range (100 - 500) ALGORITH_N_TO_3 O(n^3)      < 0.1          82 sec with 15 points     61 sec with 10 points
 # n in range (10 - 25) HANOI O(2^n)                  <              30 sec with 15 points
@@ -218,42 +265,87 @@ def set_points():
 
 parser = argparse.ArgumentParser()
 parser.add_argument("timeout", help="Max time for counting one point", type=int)
-parser.add_argument("-points_quantity", help="Quantity of points in graph", type=int, default=10)
-parser.add_argument("-precision", help="How many times algorithm should be run", type=int, default=1)
+parser.add_argument("-point_precision", help="How many times algorithm should be run for a single point", type=int,
+                    default=1)
 args = parser.parse_args()
-
 timeout = args.timeout
-precision = args.precision
-points_quantity = args.points_quantity
+point_precision = args.point_precision
+# points_quantity = args.points_quantity
+
+global c
+c = 0
+total_time = 0
 size_max = 25
 size_min = 10
-r = 3
+points_quantity = 15
+print("I'm checking O(2^n) with size_min = " + str(size_min) + ", size_max = " + str(
+    size_max) + ", points_quantity = " + str(points_quantity))
 step = (size_max - size_min) // points_quantity
-
-points = set_points()
-
-max_ratio = 0
-
+if step == 0:
+    step = 1
+points = set_points(total_time)
 # checking O(2^n)
 if check_2_to_n() is False:
-    size_max = 500
-    size_min = 100
-    step = (size_max - size_min) // points_quantity
-
-    points = set_points()
-    middle_point = ((size_max - size_min) // step + 1) // 2
-    print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1]) + ")")
     # checking O(n^r)
-    while check_exp_to_r() is False and r > 1:
-        if r == 2:
-            size_min = 50000
-            size_max = 500000
-        else:
-            size_min *= 10
-            size_max *= 10
-        r -= 1
+    size_max = 450
+    size_min = 100
+    points_quantity = 15
+    print("I'm checking O(n^3) with size_min = " + str(size_min) + ", size_max = " + str(
+        size_max) + ", points_quantity = " + str(points_quantity))
+    step = (size_max - size_min) // points_quantity
+    if step == 0:
+        step = 1
+    points = set_points(total_time)
+    middle_point = ((size_max - size_min) // step + 1) // 2
+    #     print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1]) + ")"
+    if check_exp_to_r(3) is False:
+        size_min = 100  # was 1000
+        size_max = 2000  # was 5000
+        points_quantity = 40
+        print("I'm checking O(n^2) with size_min = " + str(size_min) + ", size_max = " + str(
+            size_max) + ", points_quantity = " + str(points_quantity))
         step = (size_max - size_min) // points_quantity
-        points = set_points()
+        if step == 0:
+            step = 1
+        points = set_points(total_time)
+        middle_point = ((size_max - size_min) // step + 1) // 2
+        #     print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1
+        if check_exp_to_r(2) is False:
+            size_min = 1000  # 50000
+            size_max = 100000  # 500000
+            points_quantity = 100
+            print("I'm checking O(n) with size_min = " + str(size_min) + ", size_max = " + str(
+                size_max) + ", points_quantity = " + str(points_quantity))
+            step = (size_max - size_min) // points_quantity
+            if step == 0:
+                step = 1
+            middle_point = ((size_max - size_min) // step + 1) // 2
+            #     print("middle point = (" + str(points[middle_point][0]) + ", " + str(points[middle_point][1]) + ")")
+            step = (size_max - size_min) // points_quantity
+            points = set_points(total_time)
+            if check_exp_to_r(1) is False:
+                print("It's O(log(n))")
+                exit()
+            else:
+                complexity = 4
+        else:
+            complexity = 3
+    else:
+        complexity = 2
+else:
+    complexity = 1
 
-    if r == 1:
-        print("Can't find solution")
+choice = 1
+
+while choice != 2:
+    choice = int(input(
+        "Choose option:\n0 - type size and count needed time for your algorithm\n1 - type time and count size that you can use in this time\n2 - exit program\n"))
+    if choice == 0:
+        size = int(input("Type size: "))
+        print("Needed time: " + str(count_time(c, size)))
+    elif choice == 1:
+        time = float(input("Type time: "))
+        print("Max size: " + str(count_size(c, time, complexity)))
+    elif choice == 2:
+        print("Exiting program")
+        exit()
