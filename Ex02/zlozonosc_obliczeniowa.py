@@ -22,13 +22,6 @@ def profile(fn):
     return with_profiling
 
 
-MODULE_PATH = 'test'
-FUNCTION_NAME = 'binary_search'
-MODULE = importlib.import_module(MODULE_PATH)
-MY_FUNCTION = getattr(MODULE, FUNCTION_NAME)
-arg_function = getattr(MODULE, 'generate_args_bin_search')
-
-
 @profile
 def algorithm(size):
     args = arg_function(size)
@@ -81,10 +74,10 @@ def check_2_to_n():
     precision /= points_quantity
     if precision > 0.2 or points[i][1] < 0.005:  # c==0
         print("It's faster than O(2^n)")
-        print("precision = " + str(precision))
+        # print("precision = " + str(precision))
         return False
     print("It's O(2^n) with c = " + str(c))
-    print("precision = " + str(precision))
+    # print("precision = " + str(precision))
     return True
 
 
@@ -101,10 +94,10 @@ def check_exp_to_r(r):
     precision /= points_quantity
     if precision > 0.2 or points[i][1] < 0.005:
         print("It's faster than O(n^" + str(r) + ")")
-        print("precision = " + str(precision))
+        # print("precision = " + str(precision))
         return False
     print("It's O(n^" + str(r) + ") with c = " + str(c))
-    print("precision = " + str(precision))
+    # print("precision = " + str(precision))
     return True
 
 
@@ -129,7 +122,7 @@ def set_points(total_time):
             algorithm(size)
         print_prof_data()
         clear_prof_data()
-        print('%d, %.3f' % (size, avg_time))
+        # print('%d, %.3f' % (size, avg_time))
         licznik += 1
         points[counter][0] = size
         points[counter][1] = avg_time
@@ -177,7 +170,7 @@ def count_size(c, time, complexity):
     return result
 
 
-# n in range (1 000 - 10 000), 100 points QUICKSORT O(n^1)
+# n in range (1 000 - 40 000), 100 points QUICKSORT O(n^1)
 # n in range (100 - 2000), 40 points BUBBLESORT O(n^2)
 # n in range (100 - 450), 15 points ALGORITH_N_TO_3 O(n^3)
 # n in range (10 - 25), 15 points HANOI O(2^n)
@@ -185,6 +178,25 @@ def count_size(c, time, complexity):
 
 
 def main():
+    global arg_function
+    global MY_FUNCTION
+    MODULE_PATH = 'test'
+    MODULE = importlib.import_module(MODULE_PATH)
+
+    FUNCTION_NAME = 'bubblesort'
+    arg_function = getattr(MODULE, 'generate_args_bubblesort')
+
+    # FUNCTION_NAME = 'quicksort'
+    # arg_function = getattr(MODULE, 'generate_args_quicksort')
+
+    # FUNCTION_NAME = 'algorithm_n_to_3'
+    # arg_function = getattr(MODULE, 'generate_args_n3')
+
+    # FUNCTION_NAME = 'hanoi'
+    # arg_function = getattr(MODULE, 'generate_args_hanoi')
+
+    MY_FUNCTION = getattr(MODULE, FUNCTION_NAME)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("timeout",
                         help="Max time for counting one point", type=int)
@@ -249,7 +261,7 @@ def main():
             middle_point = ((size_max - size_min) // step + 1) // 2
             if check_exp_to_r(2) is False:
                 size_min = 1000  # 50000
-                size_max = 60000  # 500000
+                size_max = 35000  # 500000
                 points_quantity = 100
                 print("I'm checking O(n) with size_min = " + str(size_min) +
                       ", size_max = " + str(size_max) +
