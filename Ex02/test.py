@@ -25,8 +25,6 @@ def generate_args_bin_search(size):
     list = rand(size, 10000)
     return list[random.randint(0, len(list) - 1)], list
 
-    # binary_search(tab[random.randint(0, len(tab) - 1)], tab)
-
 
 def rand(size, do):  # zwraca tablicę o podanym rozmiarze
     tab = []  # z wylosowanymi wartościami
@@ -42,7 +40,7 @@ def bubblesort(tab):  # zwraca posortowaną tablicę
     for i in range(len(tab)):
         j = len(tab) - 1  # od ostatniej komórki
         while j > i:  # do aktualnie szukanej jako najmniejsza
-            if tab[j] < tab[j - 1]:  # jeśli komórka wcześniej jest mniejsza, zamienia
+            if tab[j] < tab[j - 1]:
                 tmp = tab[j]
                 tab[j] = tab[j - 1]
                 tab[j - 1] = tmp
@@ -101,7 +99,7 @@ def binary_search(value, data):
     # szukaj dopoki granica lewa jest mniejsza od prawej
     while left < right:
         middle = (left + right) // 2  # wybor elementu srodkowego
-        if data[middle] < value:  # jezeli element srodkowy jest mniejszy od szukanego
+        if data[middle] < value:
             left = middle + 1  # to odrzuc lewa polowke (przesun lewa granice)
         else:  # w przeciwnym razie
             right = middle  # odrzuc prawa polowke (przesun prawa granice)
