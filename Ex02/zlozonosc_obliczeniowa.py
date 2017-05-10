@@ -4,6 +4,7 @@ import argparse
 import importlib
 import time
 from functools import wraps
+import matplotlib.pyplot as plt
 
 
 def profile(fn):
@@ -26,11 +27,11 @@ def profile(fn):
 def algorithm(size):
     args = arg_function(size)
     if type(args) is tuple:
-        MY_FUNCTION(*args)
+        my_function(*args)
     elif type(args) is dict:
-        MY_FUNCTION(**args)
+        my_function(**args)
     else:
-        MY_FUNCTION(args)
+        my_function(args)
 
 
 PROF_DATA = {}
@@ -74,10 +75,8 @@ def check_2_to_n():
     precision /= points_quantity
     if precision > 0.2 or points[i][1] < 0.005:  # c==0
         print("It's faster than O(2^n)")
-        # print("precision = " + str(precision))
         return False
     print("It's O(2^n) with c = " + str(c))
-    # print("precision = " + str(precision))
     return True
 
 
@@ -94,10 +93,8 @@ def check_exp_to_r(r):
     precision /= points_quantity
     if precision > 0.2 or points[i][1] < 0.005:
         print("It's faster than O(n^" + str(r) + ")")
-        # print("precision = " + str(precision))
         return False
     print("It's O(n^" + str(r) + ") with c = " + str(c))
-    # print("precision = " + str(precision))
     return True
 
 
@@ -129,12 +126,10 @@ def set_points(total_time):
         try:
             total_time += avg_time
             if total_time > timeout:
-                raise RuntimeError('Time limit reached.')
+                raise RuntimeError()
         except RuntimeError:
-            print("Check last statement")
-            raise  # exit
-        # print("Time limit reached. Check last statement")
-        # exit()
+            print("Time limit reached. Check last statement")
+            exit()
         counter += 1
     return points
 
@@ -179,36 +174,32 @@ def count_size(c, time, complexity):
 
 def main():
     global arg_function
-    global MY_FUNCTION
-    MODULE_PATH = 'test'
-    MODULE = importlib.import_module(MODULE_PATH)
-
-    FUNCTION_NAME = 'bubblesort'
-    arg_function = getattr(MODULE, 'generate_args_bubblesort')
-
-    # FUNCTION_NAME = 'quicksort'
-    # arg_function = getattr(MODULE, 'generate_args_quicksort')
-
-    # FUNCTION_NAME = 'algorithm_n_to_3'
-    # arg_function = getattr(MODULE, 'generate_args_n3')
-
-    # FUNCTION_NAME = 'hanoi'
-    # arg_function = getattr(MODULE, 'generate_args_hanoi')
-
-    MY_FUNCTION = getattr(MODULE, FUNCTION_NAME)
+    global my_function
 
     parser = argparse.ArgumentParser()
     parser.add_argument("timeout",
                         help="Max time for counting one point", type=int)
+    parser.add_argument("module_path", help="path of tested program")
+    parser.add_argument("function_name", help="name of tested function")
+    parser.add_argument("generate_args_function",
+                        help="function which generate arguments "
+                             "for tested function")
     parser.add_argument("-point_precision",
                         help="How many times algorithm should be run for "
                              "a single point", type=int, default=1)
     args = parser.parse_args()
+
     global timeout
     timeout = args.timeout
     global point_precision
     point_precision = args.point_precision
-    # points_quantity = args.points_quantity
+
+    module_path = args.module_path
+    module = importlib.import_module(module_path)
+
+    function_name = args.function_name
+    arg_function = getattr(module, args.generate_args_function)
+    my_function = getattr(module, function_name)
 
     global c
     c = 0
@@ -222,7 +213,6 @@ def main():
     points_quantity = 15
     global step
     step = (size_max - size_min) // points_quantity
-    # set_epsilon()
     global complexity
 
     print("I'm checking O(2^n) with size_min = " + str(size_min) +
@@ -285,13 +275,13 @@ def main():
         complexity = 1
 
     choice = 1
-
-    while choice != 2:
+    while choice != 3:
         choice = int(input(
             "Choose option:\n"
             "0 - type size and count needed time for your algorithm\n"
             "1 - type time and count size that you can use in this time\n"
-            "2 - exit program\n"))
+            "2 - show plot with counted points\n"
+            "3 - exit program\n"))
         if choice == 0:
             size = int(input("Type size: "))
             print("Needed time: " + str(count_time(c, size)))
@@ -299,6 +289,11 @@ def main():
             max_time = float(input("Type time: "))
             print("Max size: " + str(count_size(c, max_time, complexity)))
         elif choice == 2:
+            plt.scatter(*zip(*points))
+            plt.ylabel('time')
+            plt.xlabel('size')
+            plt.show()
+        elif choice == 3:
             print("Exiting program")
             exit()
 
