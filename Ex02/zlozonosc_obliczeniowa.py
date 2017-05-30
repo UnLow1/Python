@@ -106,21 +106,15 @@ def set_points(total_time):
     counter = 0
     global tab
     tab = []
-    licznik = 0
     for size in range(size_min, size_max, step):
         # how many times algorithm should be run for one size
         # higher number = higher point_precision
         for i in range(0, point_precision + 1):
             tab = rand(size, 100000)
-            global a
-            a = []
-            for i in range(0, size):
-                a.append(size - i)
             algorithm(size)
         print_prof_data()
         clear_prof_data()
         # print('%d, %.3f' % (size, avg_time))
-        licznik += 1
         points[counter][0] = size
         points[counter][1] = avg_time
         try:
@@ -179,7 +173,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("timeout",
                         help="Max time for counting one point", type=int)
-    parser.add_argument("module_path", help="path of tested program")
+    parser.add_argument("module_path", help="path of tested program "
+                                            "(use . not /)")
     parser.add_argument("function_name", help="name of tested function")
     parser.add_argument("generate_args_function",
                         help="function which generate arguments "
@@ -236,7 +231,7 @@ def main():
             step = 1
         points = set_points(total_time)
         global middle_point
-        middle_point = ((size_max - size_min) // step + 1) // 2
+        middle_point = points_quantity // 2
         if check_exp_to_r(3) is False:
             size_min = 100  # was 1000
             size_max = 2000  # was 5000
@@ -248,7 +243,7 @@ def main():
             if step == 0:
                 step = 1
             points = set_points(total_time)
-            middle_point = ((size_max - size_min) // step + 1) // 2
+            middle_point = points_quantity // 2
             if check_exp_to_r(2) is False:
                 size_min = 1000  # 50000
                 size_max = 35000  # 500000
@@ -259,7 +254,7 @@ def main():
                 step = (size_max - size_min) // points_quantity
                 if step == 0:
                     step = 1
-                middle_point = ((size_max - size_min) // step + 1) // 2
+                middle_point = points_quantity // 2
                 step = (size_max - size_min) // points_quantity
                 points = set_points(total_time)
                 if check_exp_to_r(1) is False:
